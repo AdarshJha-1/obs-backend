@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"obs/internal/models"
 	"os"
 	"strconv"
 	"time"
@@ -18,41 +19,61 @@ type Service interface {
 	MigrateSchema()
 	Health() map[string]string
 	Close() error
+
+	// User Methods
+	CreateUser(user *models.User) error
+	GetUser(id uint64) (*models.User, error)
+	GetUsers() ([]models.User, error)
+	DeleteUser(id uint64) error
+	UpdateUser(user models.User) error
+
+	// Blog Methods
+	GetBlogs() ([]models.Blog, error)
+	GetBlog(id uint64) (*models.Blog, error)
+	CreateBlog(blog models.Blog) error
+	DeleteBlog(id uint64) error
+	UpdateBlog(blog models.Blog) error
 }
 
 var (
-	database = os.Getenv("DB_DATABASE")
-	password = os.Getenv("DB_PASSWORD")
-	username = os.Getenv("DB_USERNAME")
-	port     = os.Getenv("DB_PORT")
-	host     = os.Getenv("DB_HOST")
-	schema   = os.Getenv("DB_SCHEMA")
+	database = getEnv("DB_DATABASE", "default_db")
+	password = getEnv("DB_PASSWORD", "password")
+	username = getEnv("DB_USERNAME", "postgres")
+	port     = getEnv("DB_PORT", "5432")
+	host     = getEnv("DB_HOST", "localhost")
+	schema   = getEnv("DB_SCHEMA", "public")
 )
 
 type service struct {
 	DB *gorm.DB
 }
 
-// ConnectDatabase initializes the GORM database connection
+// New initializes the database connection
 func New() Service {
-	dsn := fmt.Sprintf("host=%s user=%s password=%s dbname=%s port=%s sslmode=disable search_path=%s",
-		host, username, password, database, port, schema)
+	dsn := fmt.Sprintf(
+		"host=%s user=%s password=%s dbname=%s port=%s sslmode=disable search_path=%s",
+		host, username, password, database, port, schema,
+	)
 
 	db, err := gorm.Open(postgres.Open(dsn), &gorm.Config{
-		Logger: logger.Default.LogMode(logger.Info), // Log SQL queries
+		Logger: logger.Default.LogMode(logger.Warn), // Show only warnings
 	})
 	if err != nil {
-		log.Fatal("Failed to connect to database:", err)
+		log.Fatalf("[DATABASE] ❌ Failed to connect: %v", err)
 	}
 
-	service := &service{
-		DB: db,
+	// Set database connection pool settings
+	sqlDB, err := db.DB()
+	if err == nil {
+		sqlDB.SetMaxOpenConns(20)
+		sqlDB.SetMaxIdleConns(5)
+		sqlDB.SetConnMaxLifetime(30 * time.Minute)
 	}
-	// Store DB instance globally
 
-	log.Println("Connected to database successfully!")
+	service := &service{DB: db}
+	log.Println("[DATABASE] ✅ Connected successfully!")
 
-	// Run AutoMigrations (This creates tables based on models)
+	// Run AutoMigrations
 	service.MigrateSchema()
 
 	return service
@@ -60,11 +81,11 @@ func New() Service {
 
 // MigrateSchema runs auto-migrations for all models
 func (s *service) MigrateSchema() {
-	err := s.DB.AutoMigrate(&User{}, &Blog{}, &Comment{}, &Like{}, &Follow{})
+	err := s.DB.AutoMigrate(&models.User{}, &models.Blog{}, &models.Comment{}, &models.Like{}, &models.Follow{})
 	if err != nil {
-		log.Fatal("Migration failed:", err)
+		log.Fatalf("[DATABASE] ❌ Migration failed: %v", err)
 	}
-	log.Println("Database migrated successfully!")
+	log.Println("[DATABASE] ✅ Migration successful!")
 }
 
 // Health checks the database connection status
@@ -108,6 +129,16 @@ func (s *service) Close() error {
 	if err != nil {
 		return err
 	}
-	log.Println("Disconnected from database.")
+	log.Println("[DATABASE] ❌ Disconnected.")
 	return sqlDB.Close()
+}
+
+// getEnv fetches environment variables with a default fallback
+func getEnv(key, fallback string) string {
+	value, exists := os.LookupEnv(key)
+	if !exists || value == "" {
+		log.Printf("[WARNING] ⚠️ Missing env: %s, using default: %s", key, fallback)
+		return fallback
+	}
+	return value
 }
