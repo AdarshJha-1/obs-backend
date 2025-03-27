@@ -2,19 +2,16 @@ package models
 
 import (
 	"time"
-
-	"gorm.io/gorm"
 )
 
-// User model
+// User model with validation
 type User struct {
-	ID        uint64         `gorm:"primaryKey"`
-	Username  string         `gorm:"size:100;unique;not null" json:"username"`
-	Email     string         `gorm:"size:100;unique;not null" json:"email"`
-	Password  string         `gorm:"type:text;not null" json:"password"`
-	Role      string         `gorm:"size:50;not null;default:'author'" json:"role"`
-	CreatedAt time.Time      `json:"created_at"`
-	DeletedAt gorm.DeletedAt `gorm:"index" json:"-"`
+	ID        uint      `gorm:"primaryKey"`
+	Username  string    `gorm:"size:100;not null" json:"username" validate:"required,min=3,max=100"`
+	Email     string    `gorm:"size:100;uniqueIndex;not null"`
+	Password  string    `gorm:"type:text;not null" json:"password" validate:"required,min=6"`
+	Role      string    `gorm:"size:50;not null;default:'author'" json:"role" validate:"required,oneof=author admin"`
+	CreatedAt time.Time `json:"created_at"`
 
 	// Relationships
 	Blogs     []Blog    `gorm:"foreignKey:UserID;constraint:OnDelete:CASCADE;"`

@@ -28,6 +28,7 @@ func (s *Server) RegisterRoutes() http.Handler {
 			user.GET("/u/:user_id", s.GetUser)
 			user.GET("/all", s.GetUsers)
 			user.POST("/register", s.RegisterUser)
+			user.POST("/login", s.Login)
 			user.DELETE("/u/:user_id", s.DeleteUserById)
 			user.PUT("/u/:user_id", s.UpdateUserById)
 		}
@@ -35,8 +36,8 @@ func (s *Server) RegisterRoutes() http.Handler {
 		{
 			blog.GET("/", s.GetAllBlogs)
 			blog.POST("/", s.CreateNewBlog)
-			blog.GET("/b/:blog_id", s.GetBlogById)
-			blog.DELETE("/b/:blog_id", s.DeleteBlogById)
+			blog.GET("/b/:blog_id", s.GetBlogByID)
+			blog.DELETE("/b/:blog_id", s.DeleteBlogByID)
 			blog.PUT("/b/:blog_id", s.UpdateBlog)
 		}
 	}

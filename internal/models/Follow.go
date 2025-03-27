@@ -1,12 +1,14 @@
 package models
 
-import "time"
+import (
+	"time"
+)
 
-// Follow model
+// Follow model with validation
 type Follow struct {
 	ID         uint      `gorm:"primaryKey" json:"id"`
-	FollowerID uint      `gorm:"not null;index" json:"follower_id"`
-	FollowedID uint      `gorm:"not null;index" json:"followed_id"`
+	FollowerID uint      `gorm:"not null;index" json:"follower_id" validate:"required,nefield=FollowedID"`
+	FollowedID uint      `gorm:"not null;index" json:"followed_id" validate:"required"`
 	CreatedAt  time.Time `json:"created_at"`
 
 	// Relationships

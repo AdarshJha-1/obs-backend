@@ -1,12 +1,14 @@
 package models
 
-import "time"
+import (
+	"time"
+)
 
-// Like model
+// Like model with validation
 type Like struct {
 	ID        uint      `gorm:"primaryKey" json:"id"`
-	UserID    uint      `gorm:"not null;index" json:"user_id"`
-	BlogID    uint      `gorm:"not null;index" json:"blog_id"`
+	UserID    uint      `gorm:"not null;index" json:"user_id" validate:"required"`
+	BlogID    uint      `gorm:"not null;index" json:"blog_id" validate:"required"`
 	CreatedAt time.Time `json:"created_at"`
 
 	// Relationships

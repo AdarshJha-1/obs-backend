@@ -21,18 +21,19 @@ type Service interface {
 	Close() error
 
 	// User Methods
+	GetUserByEmail(email string) (*models.User, error)
 	CreateUser(user *models.User) error
-	GetUser(id uint64) (*models.User, error)
+	GetUser(id uint) (*models.User, error)
 	GetUsers() ([]models.User, error)
-	DeleteUser(id uint64) error
-	UpdateUser(user models.User) error
+	DeleteUser(id uint) error
+	UpdateUser(user *models.User) error
 
 	// Blog Methods
 	GetBlogs() ([]models.Blog, error)
-	GetBlog(id uint64) (*models.Blog, error)
-	CreateBlog(blog models.Blog) error
-	DeleteBlog(id uint64) error
-	UpdateBlog(blog models.Blog) error
+	GetBlog(id uint) (*models.Blog, error)
+	CreateBlog(blog *models.Blog) error
+	DeleteBlog(id uint) error
+	UpdateBlog(blog *models.Blog) error
 }
 
 var (
