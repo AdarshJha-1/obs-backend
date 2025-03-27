@@ -31,9 +31,23 @@ type Service interface {
 	// Blog Methods
 	GetBlogs() ([]models.Blog, error)
 	GetBlog(id uint) (*models.Blog, error)
-	CreateBlog(blog *models.Blog) error
-	DeleteBlog(id uint) error
+	CreateBlog(blog *models.Blog) (*models.Blog, error)
 	UpdateBlog(blog *models.Blog) error
+	DeleteBlog(id uint) error
+
+	// Comment Methods
+	GetComments(blogID uint) ([]models.Comment, error)
+	GetComment(id uint) (*models.Comment, error)
+	CreateComment(comment *models.Comment) error
+	UpdateComment(comment *models.Comment) error
+	DeleteComment(id uint) error
+
+	// Like functions
+	GetLikesForBlog(blogID uint) (int64, error)
+	GetLikeByID(likeID uint) (*models.Like, error)
+	LikeBlog(like *models.Like) error
+	UnlikeBlog(userID, blogID uint) error
+	DeleteLike(likeID uint) error
 }
 
 var (

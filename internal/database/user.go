@@ -79,7 +79,17 @@ func (s *service) UpdateUser(user *models.User) error {
 		return errors.New("invalid user data")
 	}
 
-	result := s.DB.Save(user)
+	// Fetch existing user
+	existingUser, err := s.GetUser(user.ID)
+	if err != nil {
+		return err
+	}
+	if existingUser == nil {
+		return errors.New("user not found")
+	}
+
+	// Only update fields that are not zero values
+	result := s.DB.Model(&existingUser).Updates(user)
 	if result.Error != nil {
 		log.Printf("[DATABASE] Error updating user: %v", result.Error)
 		return result.Error
@@ -88,6 +98,7 @@ func (s *service) UpdateUser(user *models.User) error {
 	log.Printf("[DATABASE] User ID %d updated successfully", user.ID)
 	return nil
 }
+
 func (s *service) GetUserByEmail(email string) (*models.User, error) {
 	var user models.User
 	err := s.DB.Unscoped().Where("LOWER(email) = LOWER(?)", email).First(&user).Error

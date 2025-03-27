@@ -7,19 +7,19 @@ import (
 	"gorm.io/gorm"
 )
 
-// GetBlogs retrieves all blogs from the database
+// GetBlogs retrieves all blogs along with their related data
 func (s *service) GetBlogs() ([]models.Blog, error) {
 	var blogs []models.Blog
-	if err := s.DB.Find(&blogs).Error; err != nil {
+	if err := s.DB.Preload("User").Preload("Comments").Preload("Likes").Find(&blogs).Error; err != nil {
 		return nil, err
 	}
 	return blogs, nil
 }
 
-// GetBlog fetches a single blog by its ID
+// GetBlog fetches a single blog by its ID along with its related data
 func (s *service) GetBlog(id uint) (*models.Blog, error) {
 	var blog models.Blog
-	if err := s.DB.First(&blog, id).Error; err != nil {
+	if err := s.DB.Preload("User").Preload("Comments").Preload("Likes").First(&blog, id).Error; err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return nil, nil // Return nil when the blog is not found
 		}
@@ -28,9 +28,12 @@ func (s *service) GetBlog(id uint) (*models.Blog, error) {
 	return &blog, nil
 }
 
-// CreateBlog inserts a new blog into the database
-func (s *service) CreateBlog(blog *models.Blog) error {
-	return s.DB.Create(blog).Error
+// CreateBlog inserts a new blog into the database and returns it
+func (s *service) CreateBlog(blog *models.Blog) (*models.Blog, error) {
+	if err := s.DB.Create(blog).Error; err != nil {
+		return nil, err
+	}
+	return blog, nil
 }
 
 // DeleteBlog removes a blog by ID after checking its existence
@@ -45,9 +48,12 @@ func (s *service) DeleteBlog(id uint) error {
 	return nil
 }
 
-// UpdateBlog modifies an existing blog's fields
+// UpdateBlog modifies an existing blog's fields safely
 func (s *service) UpdateBlog(blog *models.Blog) error {
-	result := s.DB.Model(&models.Blog{}).Where("id = ?", blog.ID).Updates(blog)
+	result := s.DB.Model(&models.Blog{}).Where("id = ?", blog.ID).Updates(map[string]interface{}{
+		"title":   blog.Title,
+		"content": blog.Content,
+	})
 	if result.Error != nil {
 		return result.Error
 	}
