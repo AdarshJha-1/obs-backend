@@ -39,12 +39,12 @@ type Service interface {
 	GetComments(blogID uint) ([]models.Comment, error)
 	GetComment(id uint) (*models.Comment, error)
 	CreateComment(comment *models.Comment) error
-	UpdateComment(comment *models.Comment) error
-	DeleteComment(id uint) error
-
+	UpdateComment(id uint, userID uint, content string) error
+	DeleteComment(id uint, userID uint) error
 	// Like functions
 	GetLikesForBlog(blogID uint) (int64, error)
 	GetLikeByID(likeID uint) (*models.Like, error)
+	GetLikeByUserAndBlog(userID, blogID uint) (*models.Like, error)
 	LikeBlog(like *models.Like) error
 	UnlikeBlog(userID, blogID uint) error
 	DeleteLike(likeID uint) error

@@ -7,10 +7,10 @@ import (
 	"gorm.io/gorm"
 )
 
-// GetComments retrieves all comments for a given blog ID
+// GetComments retrieves all comments for a blog with user info
 func (s *service) GetComments(blogID uint) ([]models.Comment, error) {
 	var comments []models.Comment
-	if err := s.DB.Where("blog_id = ?", blogID).Find(&comments).Error; err != nil {
+	if err := s.DB.Preload("User").Where("blog_id = ?", blogID).Find(&comments).Error; err != nil {
 		return nil, err
 	}
 	return comments, nil
@@ -19,7 +19,7 @@ func (s *service) GetComments(blogID uint) ([]models.Comment, error) {
 // GetComment fetches a single comment by its ID
 func (s *service) GetComment(id uint) (*models.Comment, error) {
 	var comment models.Comment
-	if err := s.DB.First(&comment, id).Error; err != nil {
+	if err := s.DB.Preload("User").First(&comment, id).Error; err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return nil, nil
 		}
@@ -33,9 +33,9 @@ func (s *service) CreateComment(comment *models.Comment) error {
 	return s.DB.Create(comment).Error
 }
 
-// UpdateComment modifies an existing comment
-func (s *service) UpdateComment(comment *models.Comment) error {
-	result := s.DB.Model(&models.Comment{}).Where("id = ?", comment.ID).Updates(comment)
+// UpdateComment updates only the content of a comment
+func (s *service) UpdateComment(id uint, userID uint, content string) error {
+	result := s.DB.Model(&models.Comment{}).Where("id = ? AND user_id = ?", id, userID).Update("content", content)
 	if result.Error != nil {
 		return result.Error
 	}
@@ -45,9 +45,9 @@ func (s *service) UpdateComment(comment *models.Comment) error {
 	return nil
 }
 
-// DeleteComment removes a comment by ID
-func (s *service) DeleteComment(id uint) error {
-	result := s.DB.Delete(&models.Comment{}, id)
+// DeleteComment ensures only the comment owner can delete it
+func (s *service) DeleteComment(id uint, userID uint) error {
+	result := s.DB.Where("id = ? AND user_id = ?", id, userID).Delete(&models.Comment{})
 	if result.Error != nil {
 		return result.Error
 	}

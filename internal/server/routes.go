@@ -2,6 +2,7 @@ package server
 
 import (
 	"net/http"
+	"obs/internal/middleware"
 
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
@@ -9,7 +10,8 @@ import (
 
 func (s *Server) RegisterRoutes() http.Handler {
 	r := gin.Default()
-
+	r.RedirectTrailingSlash = true
+	// CORS configuration
 	r.Use(cors.New(cors.Config{
 		AllowOrigins:     []string{"http://localhost:5173"}, // Add your frontend URL
 		AllowMethods:     []string{"GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"},
@@ -17,54 +19,66 @@ func (s *Server) RegisterRoutes() http.Handler {
 		AllowCredentials: true, // Enable cookies/auth
 	}))
 
+	// Public Routes
 	r.GET("/", s.HelloWorldHandler)
-
 	r.GET("/health", s.healthHandler)
 
 	api := r.Group("/api")
 	{
-		user := api.Group("/user")
+		// Public User Routes
+		public := api.Group("/")
 		{
-			user.GET("/u/:user_id", s.GetUser)
-			user.GET("/all", s.GetUsers)
-			user.POST("/register", s.RegisterUser)
-			user.POST("/login", s.LoginUser)
-			user.DELETE("/u/:user_id", s.DeleteUserById)
-			user.PUT("/u/:user_id", s.UpdateUserById)
+			public.POST("/register", s.RegisterUser) // Public Route
+			public.POST("/login", s.LoginUser)       // Public Route
 		}
+
+		// Protected User Routes
+		protectedUser := api.Group("/user")
+		protectedUser.Use(middleware.AuthMiddleware()) // Apply middleware separately
+		{
+			protectedUser.GET("/", s.GetCurrentUser)
+			protectedUser.GET("/all", s.GetUsers)
+			protectedUser.DELETE("/", s.DeleteCurrentUser)
+			protectedUser.PUT("/", s.UpdateCurrentUser)
+		}
+
+		// Protected Blog Routes
 		blog := api.Group("/blog")
+		blog.Use(middleware.AuthMiddleware()) // Apply middleware separately
 		{
 			blog.GET("/all", s.GetAllBlogs)
 			blog.POST("/", s.CreateNewBlog)
 			blog.GET("/b/:blog_id", s.GetBlogByID)
 			blog.DELETE("/b/:blog_id", s.DeleteBlogByID)
 			blog.PUT("/b/:blog_id", s.UpdateBlog)
+
+			blog.POST("/like", s.LikeBlog)
+			blog.DELETE("/unlike", s.UnlikeBlog)
+
 			// Nested Comments under a Blog
 			comments := blog.Group("/:blog_id/comments")
 			{
-				comments.GET("/", s.GetAllComments)    // Get all comments for a blog
-				comments.POST("/", s.CreateNewComment) // Add a new comment to a blog
+				comments.GET("/", s.GetAllComments)
+				comments.POST("/", s.CreateNewComment)
 			}
 		}
+
+		// Protected Comment Routes
 		comment := api.Group("/comment")
+		comment.Use(middleware.AuthMiddleware()) // Apply middleware separately
 		{
-			comment.GET("/:comment_id", s.GetCommentByID)       // Get a single comment by ID
-			comment.PUT("/:comment_id", s.UpdateComment)        // Update a comment by ID
-			comment.DELETE("/:comment_id", s.DeleteCommentByID) // Delete a comment by ID
+			comment.GET("/:comment_id", s.GetCommentByID)
+			comment.PUT("/:comment_id", s.UpdateComment)
+			comment.DELETE("/:comment_id", s.DeleteCommentByID)
 		}
-		like := api.Group("/like")
-		{
-			like.GET("/:like_id", s.LikeBlog)      // Get a like by ID
-			like.DELETE("/:like_id", s.UnlikeBlog) // Remove a like by ID
-		}
+
 	}
 	return r
 }
 
+// Public handlers
 func (s *Server) HelloWorldHandler(c *gin.Context) {
-	resp := make(map[string]string)
-	resp["message"] = "Hello World"
-
+	resp := map[string]string{"message": "Hello World"}
 	c.JSON(http.StatusOK, resp)
 }
 
