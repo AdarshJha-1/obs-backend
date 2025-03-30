@@ -40,6 +40,34 @@ func (s *Server) GetCurrentUser(c *gin.Context) {
 	c.JSON(http.StatusOK, res)
 }
 
+func (s *Server) GetUserById(c *gin.Context) {
+	id, err := utils.ParseUintParam(c, "user_id")
+	if err != nil {
+		res := types.Response{StatusCode: http.StatusBadRequest, Success: false, Message: "Invalid blog ID", Error: err.Error()}
+		c.JSON(http.StatusBadRequest, res)
+		return
+	}
+	user, err := s.db.GetUser(id)
+	if err != nil {
+		res := types.Response{StatusCode: http.StatusInternalServerError, Success: false, Message: "Database error", Error: err.Error()}
+		c.JSON(http.StatusInternalServerError, res)
+		return
+	}
+
+	if user == nil {
+		res := types.Response{StatusCode: http.StatusNotFound, Success: false, Message: "User not found"}
+		c.JSON(http.StatusNotFound, res)
+		return
+	}
+
+	res := types.Response{
+		StatusCode: http.StatusOK,
+		Success:    true,
+		Message:    "User fetched successfully",
+		Data:       map[string]any{"user": utils.SanitizedUserData(user)},
+	}
+	c.JSON(http.StatusOK, res)
+}
 func (s *Server) GetUsers(c *gin.Context) {
 	users, err := s.db.GetUsers()
 	if err != nil {

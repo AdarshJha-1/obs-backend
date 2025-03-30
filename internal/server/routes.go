@@ -38,6 +38,7 @@ func (s *Server) RegisterRoutes() http.Handler {
 		{
 			protectedUser.GET("/", s.GetCurrentUser)
 			protectedUser.GET("/all", s.GetUsers)
+			protectedUser.GET("/:user_id", s.GetUserById)
 			protectedUser.DELETE("/", s.DeleteCurrentUser)
 			protectedUser.PUT("/", s.UpdateCurrentUser)
 		}

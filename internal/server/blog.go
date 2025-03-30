@@ -45,7 +45,8 @@ func (s *Server) GetBlogByID(c *gin.Context) {
 		return
 	}
 
-	res := types.Response{StatusCode: http.StatusOK, Success: true, Message: "Blog fetched successfully", Data: map[string]any{"blog": blog}}
+	user := utils.SanitizedUserData(&blog.User)
+	res := types.Response{StatusCode: http.StatusOK, Success: true, Message: "Blog fetched successfully", Data: map[string]any{"blog": blog, "user": user}}
 	c.JSON(http.StatusOK, res)
 }
 
