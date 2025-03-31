@@ -52,6 +52,7 @@ func (s *Server) RegisterRoutes() http.Handler {
 			blog.GET("/b/:blog_id", s.GetBlogByID)
 			blog.DELETE("/b/:blog_id", s.DeleteBlogByID)
 			blog.PUT("/b/:blog_id", s.UpdateBlog)
+			blog.POST("/:blog_id/view", s.UpdateViewHandler)
 
 			blog.POST("/like", s.LikeBlog)
 			blog.DELETE("/unlike", s.UnlikeBlog)
@@ -68,9 +69,9 @@ func (s *Server) RegisterRoutes() http.Handler {
 		comment := api.Group("/comment")
 		comment.Use(middleware.AuthMiddleware()) // Apply middleware separately
 		{
+			comment.DELETE("/", s.DeleteCommentByID)
 			comment.GET("/:comment_id", s.GetCommentByID)
 			comment.PUT("/:comment_id", s.UpdateComment)
-			comment.DELETE("/:comment_id", s.DeleteCommentByID)
 		}
 
 	}

@@ -10,7 +10,7 @@ import (
 // GetBlogs retrieves all blogs along with their related data
 func (s *service) GetBlogs() ([]models.Blog, error) {
 	var blogs []models.Blog
-	if err := s.DB.Preload("User").Preload("Comments").Preload("Likes").Find(&blogs).Error; err != nil {
+	if err := s.DB.Preload("User").Preload("Comments").Preload("Likes").Preload("Views").Find(&blogs).Error; err != nil {
 		return nil, err
 	}
 	return blogs, nil

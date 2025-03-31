@@ -2,6 +2,7 @@ package server
 
 import (
 	"errors"
+	"fmt"
 	"net/http"
 	"obs/internal/models"
 	"obs/internal/types"
@@ -67,8 +68,17 @@ func (s *Server) CreateNewBlog(c *gin.Context) {
 		return
 	}
 
-	blog.UserID = userID.(uint) // Ensure type casting is correct
+	author, exists := c.Get("username")
+	if !exists {
+		res := types.Response{StatusCode: http.StatusUnauthorized, Success: false, Message: "User not authenticated"}
+		c.JSON(http.StatusUnauthorized, res)
+		return
+	}
+	blog.UserID = userID.(uint)
+	blog.Author = author.(string)
 
+	fmt.Printf("blog data: %+v\n", blog)
+	fmt.Printf("Creating blog with Author: %s\n", blog.Author)
 	createdBlog, err := s.db.CreateBlog(&blog)
 	if err != nil {
 		res := types.Response{StatusCode: http.StatusInternalServerError, Success: false, Message: "Failed to create blog", Error: err.Error()}
@@ -146,5 +156,35 @@ func (s *Server) UpdateBlog(c *gin.Context) {
 	}
 
 	res := types.Response{StatusCode: http.StatusOK, Success: true, Message: "Blog updated successfully", Data: map[string]any{"blog": existingBlog}}
+	c.JSON(http.StatusOK, res)
+}
+
+// UpdateViewHandler handles tracking unique blog views
+func (s *Server) UpdateViewHandler(c *gin.Context) {
+	// Extract user ID from middleware (must be authenticated)
+	userID, exists := c.Get("user_id")
+	if !exists {
+		res := types.Response{StatusCode: http.StatusUnauthorized, Success: false, Message: "User not authenticated"}
+		c.JSON(http.StatusUnauthorized, res)
+		return
+	}
+
+	// Extract blog ID from URL parameter
+	blogID, err := utils.ParseUintParam(c, "blog_id")
+	if err != nil {
+		res := types.Response{StatusCode: http.StatusBadRequest, Success: false, Message: "Invalid blog ID"}
+		c.JSON(http.StatusBadRequest, res)
+		return
+	}
+
+	// Call the database function to track the view
+	err = s.db.UpdateView(blogID, userID.(uint))
+	if err != nil {
+		res := types.Response{StatusCode: http.StatusInternalServerError, Success: false, Message: "Could not update view", Error: err.Error()}
+		c.JSON(http.StatusInternalServerError, res)
+		return
+	}
+
+	res := types.Response{StatusCode: http.StatusOK, Success: true, Message: "View updated successfully"}
 	c.JSON(http.StatusOK, res)
 }

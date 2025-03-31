@@ -2,6 +2,7 @@ package server
 
 import (
 	"errors"
+	"fmt"
 	"net/http"
 	"obs/internal/models"
 	"obs/internal/types"
@@ -55,6 +56,7 @@ func (s *Server) CreateNewComment(c *gin.Context) {
 		BlogID  uint   `json:"blog_id" binding:"required"`
 		Content string `json:"content" binding:"required,min=3"`
 	}
+	fmt.Printf("%+v\n", input)
 
 	if err := c.ShouldBindJSON(&input); err != nil {
 		c.JSON(http.StatusBadRequest, types.Response{StatusCode: http.StatusBadRequest, Success: false, Message: "Invalid input data"})
@@ -67,9 +69,15 @@ func (s *Server) CreateNewComment(c *gin.Context) {
 		return
 	}
 
+	username, exists := c.Get("username")
+	if !exists {
+		c.JSON(http.StatusUnauthorized, types.Response{StatusCode: http.StatusUnauthorized, Success: false, Message: "Unauthorized"})
+		return
+	}
 	comment := models.Comment{
 		BlogID:  input.BlogID,
 		UserID:  userID.(uint),
+		Author:  username.(string),
 		Content: input.Content,
 	}
 
@@ -118,19 +126,16 @@ func (s *Server) UpdateComment(c *gin.Context) {
 
 // DeleteCommentByID deletes a comment if the user is the owner
 func (s *Server) DeleteCommentByID(c *gin.Context) {
-	commentID, err := utils.ParseUintParam(c, "comment_id")
-	if err != nil {
-		c.JSON(http.StatusBadRequest, types.Response{StatusCode: http.StatusBadRequest, Success: false, Message: "Invalid comment ID"})
-		return
+	var input struct {
+		CommentId uint `json:"comment_id" binding:"required"`
+		UserId    uint `json:"user_id" binding:"required"`
 	}
 
-	userID, exists := c.Get("user_id")
-	if !exists {
-		c.JSON(http.StatusUnauthorized, types.Response{StatusCode: http.StatusUnauthorized, Success: false, Message: "Unauthorized"})
+	if err := c.ShouldBindJSON(&input); err != nil {
+		c.JSON(http.StatusBadRequest, types.Response{StatusCode: http.StatusBadRequest, Success: false, Message: "Invalid input data"})
 		return
 	}
-
-	err = s.db.DeleteComment(commentID, userID.(uint))
+	err := s.db.DeleteComment(input.CommentId, input.UserId)
 	if errors.Is(err, gorm.ErrRecordNotFound) {
 		c.JSON(http.StatusNotFound, types.Response{StatusCode: http.StatusNotFound, Success: false, Message: "Comment not found or not owned by user"})
 		return

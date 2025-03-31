@@ -41,6 +41,8 @@ type Service interface {
 	CreateComment(comment *models.Comment) error
 	UpdateComment(id uint, userID uint, content string) error
 	DeleteComment(id uint, userID uint) error
+	UpdateView(blogId, userId uint) error
+
 	// Like functions
 	GetLikesForBlog(blogID uint) (int64, error)
 	GetLikeByID(likeID uint) (*models.Like, error)
@@ -96,7 +98,7 @@ func New() Service {
 
 // MigrateSchema runs auto-migrations for all models
 func (s *service) MigrateSchema() {
-	err := s.DB.AutoMigrate(&models.User{}, &models.Blog{}, &models.Comment{}, &models.Like{}, &models.Follow{})
+	err := s.DB.AutoMigrate(&models.User{}, &models.Blog{}, &models.Comment{}, &models.Like{}, &models.Follow{}, &models.View{})
 	if err != nil {
 		log.Fatalf("[DATABASE] ❌ Migration failed: %v", err)
 	}

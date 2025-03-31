@@ -1,6 +1,7 @@
 package server
 
 import (
+	"fmt"
 	"log"
 	"net/http"
 	"obs/internal/models"
@@ -72,6 +73,7 @@ func (s *Server) LoginUser(c *gin.Context) {
 		return
 	}
 
+	fmt.Println("user name: in login :: ", user.Username)
 	token, err := utils.CreateJWT(user.ID, user.Username, user.Email)
 	if err != nil {
 		res := types.Response{StatusCode: http.StatusInternalServerError, Success: false, Message: "Error generating token", Error: err.Error()}

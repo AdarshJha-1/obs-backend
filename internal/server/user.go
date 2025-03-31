@@ -113,14 +113,14 @@ func (s *Server) UpdateCurrentUser(c *gin.Context) {
 }
 
 func (s *Server) DeleteCurrentUser(c *gin.Context) {
-	userID, exists := c.Get("user_id")
-	if !exists {
-		res := types.Response{StatusCode: http.StatusUnauthorized, Success: false, Message: "Unauthorized access"}
-		c.JSON(http.StatusUnauthorized, res)
+	var input struct {
+		UserId uint `json:"user_id"`
+	}
+	if err := c.ShouldBindJSON(&input); err != nil {
+		c.JSON(http.StatusBadRequest, types.Response{StatusCode: http.StatusBadRequest, Success: false, Message: "Invalid input data"})
 		return
 	}
-
-	if err := s.db.DeleteUser(userID.(uint)); err != nil {
+	if err := s.db.DeleteUser(uint(input.UserId)); err != nil {
 		res := types.Response{StatusCode: http.StatusInternalServerError, Success: false, Message: "Failed to delete user", Error: err.Error()}
 		c.JSON(http.StatusInternalServerError, res)
 		return
