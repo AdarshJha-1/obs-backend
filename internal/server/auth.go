@@ -1,7 +1,6 @@
 package server
 
 import (
-	"fmt"
 	"log"
 	"net/http"
 	"obs/internal/models"
@@ -51,7 +50,7 @@ func (s *Server) RegisterUser(c *gin.Context) {
 	c.JSON(http.StatusCreated, res)
 }
 
-// LoginUser handles user authentication and sets a cookie
+// LoginUser handles user authentication, sets a cookie, and checks if user is an author or admin
 func (s *Server) LoginUser(c *gin.Context) {
 	var creds types.SignInModel
 	if err := c.ShouldBindJSON(&creds); err != nil {
@@ -67,29 +66,68 @@ func (s *Server) LoginUser(c *gin.Context) {
 		return
 	}
 
+	// Check password
 	if !utils.CheckPassword(creds.Password, user.Password) {
 		res := types.Response{StatusCode: http.StatusUnauthorized, Success: false, Message: "Invalid credentials"}
 		c.JSON(http.StatusUnauthorized, res)
 		return
 	}
 
-	fmt.Println("user name: in login :: ", user.Username)
-	token, err := utils.CreateJWT(user.ID, user.Username, user.Email)
+	// Check if the user is an admin or author
+	var role string
+	switch user.Role {
+	case "admin":
+		role = "admin"
+	default:
+		role = "author"
+	}
+
+	token, err := utils.CreateJWT(user.ID, user.Username, user.Email, role) // pass role to JWT creation
 	if err != nil {
 		res := types.Response{StatusCode: http.StatusInternalServerError, Success: false, Message: "Error generating token", Error: err.Error()}
 		c.JSON(http.StatusInternalServerError, res)
 		return
 	}
 
+	// Set token as cookie
 	http.SetCookie(c.Writer, &http.Cookie{
 		Name:     "auth_token",
 		Value:    token,
 		HttpOnly: true,
 		Secure:   true,
 		Path:     "/",
+		MaxAge:   3600, // Cookie lasts for 1 hour (3600 seconds)
+		SameSite: http.SameSiteLaxMode,
 	})
 
+	// Optionally sanitize user data before returning it
 	sanitizedUser := utils.SanitizedUserData(user)
-	res := types.Response{StatusCode: http.StatusOK, Success: true, Message: "Login successful", Data: map[string]any{"user": sanitizedUser}}
+	res := types.Response{
+		StatusCode: http.StatusOK,
+		Success:    true,
+		Message:    "Login successful",
+		Data:       map[string]any{"user": sanitizedUser, "role": role},
+	}
+	c.JSON(http.StatusOK, res)
+}
+
+// LogoutUser handles user logout by clearing the auth_token cookie
+func (s *Server) LogoutUser(c *gin.Context) {
+	// Clear the authentication cookie
+	http.SetCookie(c.Writer, &http.Cookie{
+		Name:     "auth_token",
+		Value:    "",
+		HttpOnly: true,
+		Secure:   true,
+		Path:     "/",
+		MaxAge:   -1, // Expire the cookie immediately
+		SameSite: http.SameSiteLaxMode,
+	})
+
+	res := types.Response{
+		StatusCode: http.StatusOK,
+		Success:    true,
+		Message:    "Logout successful",
+	}
 	c.JSON(http.StatusOK, res)
 }

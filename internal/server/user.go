@@ -129,3 +129,49 @@ func (s *Server) DeleteCurrentUser(c *gin.Context) {
 	res := types.Response{StatusCode: http.StatusOK, Success: true, Message: "User deleted successfully"}
 	c.JSON(http.StatusOK, res)
 }
+
+// Follow a user
+func (s *Server) FollowUser(c *gin.Context) {
+	userID, exists := c.Get("user_id")
+	if !exists {
+		c.JSON(http.StatusUnauthorized, types.Response{StatusCode: http.StatusUnauthorized, Success: false, Message: "Unauthorized access"})
+		return
+	}
+
+	followedID, err := utils.ParseUintParam(c, "user_id")
+	if err != nil {
+		c.JSON(http.StatusBadRequest, types.Response{StatusCode: http.StatusBadRequest, Success: false, Message: "Invalid user ID", Error: err.Error()})
+		return
+	}
+
+	err = s.db.FollowUser(userID.(uint), followedID)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, types.Response{StatusCode: http.StatusInternalServerError, Success: false, Message: "Error following user", Error: err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, types.Response{StatusCode: http.StatusOK, Success: true, Message: "Followed user successfully"})
+}
+
+// Unfollow a user
+func (s *Server) UnfollowUser(c *gin.Context) {
+	userID, exists := c.Get("user_id")
+	if !exists {
+		c.JSON(http.StatusUnauthorized, types.Response{StatusCode: http.StatusUnauthorized, Success: false, Message: "Unauthorized access"})
+		return
+	}
+
+	followedID, err := utils.ParseUintParam(c, "user_id")
+	if err != nil {
+		c.JSON(http.StatusBadRequest, types.Response{StatusCode: http.StatusBadRequest, Success: false, Message: "Invalid user ID", Error: err.Error()})
+		return
+	}
+
+	err = s.db.UnfollowUser(userID.(uint), followedID)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, types.Response{StatusCode: http.StatusInternalServerError, Success: false, Message: "Error unfollowing user", Error: err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, types.Response{StatusCode: http.StatusOK, Success: true, Message: "Unfollowed user successfully"})
+}

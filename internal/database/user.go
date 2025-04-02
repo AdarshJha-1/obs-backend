@@ -29,7 +29,10 @@ func (s *service) CreateUser(user *models.User) error {
 // GetUser retrieves a user by ID
 func (s *service) GetUser(id uint) (*models.User, error) {
 	var user models.User
-	result := s.DB.First(&user, id)
+	result := s.DB.
+		Preload("Followers").
+		Preload("Following").
+		First(&user, id)
 
 	if result.Error != nil {
 		if errors.Is(result.Error, gorm.ErrRecordNotFound) {
@@ -45,7 +48,10 @@ func (s *service) GetUser(id uint) (*models.User, error) {
 // GetUsers fetches all users
 func (s *service) GetUsers() ([]models.User, error) {
 	var users []models.User
-	result := s.DB.Find(&users)
+	result := s.DB.
+		Preload("Followers").
+		Preload("Following").
+		Find(&users)
 
 	if result.Error != nil {
 		log.Printf("[DATABASE] Error retrieving users: %v", result.Error)
@@ -107,4 +113,51 @@ func (s *service) GetUserByEmail(email string) (*models.User, error) {
 		return nil, nil
 	}
 	return &user, err
+}
+
+// FollowUser allows a user to follow another user
+func (s *service) FollowUser(followerID, followedID uint) error {
+	if followerID == followedID {
+		return errors.New("a user cannot follow themselves")
+	}
+
+	// Check if the follow relationship already exists
+	var existingFollow models.Follow
+	result := s.DB.Where("follower_id = ? AND followed_id = ?", followerID, followedID).First(&existingFollow)
+	if result.Error == nil {
+		return errors.New("already following this user")
+	} else if !errors.Is(result.Error, gorm.ErrRecordNotFound) {
+		log.Printf("[DATABASE] Error checking follow relationship: %v", result.Error)
+		return result.Error
+	}
+
+	// Create a new follow relationship
+	follow := models.Follow{
+		FollowerID: followerID,
+		FollowedID: followedID,
+	}
+	if err := s.DB.Create(&follow).Error; err != nil {
+		log.Printf("[DATABASE] Error following user: %v", err)
+		return err
+	}
+
+	log.Printf("[DATABASE] User %d followed user %d", followerID, followedID)
+	return nil
+}
+
+// UnfollowUser allows a user to unfollow another user
+func (s *service) UnfollowUser(followerID, followedID uint) error {
+	result := s.DB.Where("follower_id = ? AND followed_id = ?", followerID, followedID).Delete(&models.Follow{})
+
+	if result.Error != nil {
+		log.Printf("[DATABASE] Error unfollowing user: %v", result.Error)
+		return result.Error
+	}
+
+	if result.RowsAffected == 0 {
+		return errors.New("not following this user")
+	}
+
+	log.Printf("[DATABASE] User %d unfollowed user %d", followerID, followedID)
+	return nil
 }

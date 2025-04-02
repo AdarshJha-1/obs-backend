@@ -40,6 +40,7 @@ func AuthMiddleware() gin.HandlerFunc {
 		c.Set("user_id", claims.UserID)
 		c.Set("username", claims.Username)
 		c.Set("email", claims.Email)
+		c.Set("role", claims.Role)
 
 		// Continue to the next handler
 		c.Next()

@@ -15,10 +15,13 @@ type User struct {
 	CreatedAt time.Time `json:"created_at"`
 
 	// Relationships
-	Blogs     []Blog    `gorm:"foreignKey:UserID;constraint:OnDelete:CASCADE;"`
-	Comments  []Comment `gorm:"foreignKey:UserID;constraint:OnDelete:CASCADE;"`
-	Likes     []Like    `gorm:"foreignKey:UserID;constraint:OnDelete:CASCADE;"`
-	Followers []Follow  `gorm:"foreignKey:FollowerID;constraint:OnDelete:CASCADE;"`
-	Following []Follow  `gorm:"foreignKey:FollowedID;constraint:OnDelete:CASCADE;"`
-	Views     []View    `gorm:"foreignKey:UserID;constraint:OnDelete:CASCADE;"`
+	Blogs    []Blog    `gorm:"foreignKey:UserID;constraint:OnDelete:CASCADE;"`
+	Comments []Comment `gorm:"foreignKey:UserID;constraint:OnDelete:CASCADE;"`
+	Likes    []Like    `gorm:"foreignKey:UserID;constraint:OnDelete:CASCADE;"`
+	Views    []View    `gorm:"foreignKey:UserID;constraint:OnDelete:CASCADE;"`
+	// Followers - Users who follow this user
+	Followers []User `gorm:"many2many:follows;joinForeignKey:FollowedID;JoinReferences:FollowerID"`
+
+	// Following - Users this user follows
+	Following []User `gorm:"many2many:follows;joinForeignKey:FollowerID;JoinReferences:FollowedID"`
 }

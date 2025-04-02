@@ -14,11 +14,12 @@ type CustomClaims struct {
 	UserID   uint   `json:"user_id"`
 	Username string `json:"username"`
 	Email    string `json:"email"`
+	Role     string `json:"role"`
 	jwt.RegisteredClaims
 }
 
 // CreateJWT generates a new JWT token for a given user
-func CreateJWT(userID uint, username, email string) (string, error) {
+func CreateJWT(userID uint, username, email, role string) (string, error) {
 	secretKey := os.Getenv("JWT_SECRET")
 	if secretKey == "" {
 		return "", errors.New("JWT_SECRET is not set")
@@ -28,6 +29,7 @@ func CreateJWT(userID uint, username, email string) (string, error) {
 		UserID:   userID,
 		Username: username,
 		Email:    email,
+		Role:     role,
 		RegisteredClaims: jwt.RegisteredClaims{
 			ExpiresAt: jwt.NewNumericDate(time.Now().Add(24 * time.Hour)), // 24 hours expiry
 			IssuedAt:  jwt.NewNumericDate(time.Now()),

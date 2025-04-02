@@ -41,6 +41,9 @@ func (s *Server) RegisterRoutes() http.Handler {
 			protectedUser.GET("/:user_id", s.GetUserById)
 			protectedUser.DELETE("/", s.DeleteCurrentUser)
 			protectedUser.PUT("/", s.UpdateCurrentUser)
+			protectedUser.POST("/follow/:user_id", s.FollowUser)
+			protectedUser.DELETE("/unfollow/:user_id", s.UnfollowUser)
+			protectedUser.POST("/logout", s.LogoutUser)
 		}
 
 		// Protected Blog Routes
@@ -73,7 +76,25 @@ func (s *Server) RegisterRoutes() http.Handler {
 			comment.GET("/:comment_id", s.GetCommentByID)
 			comment.PUT("/:comment_id", s.UpdateComment)
 		}
+		// Admin Routes
+		admin := api.Group("/admin")
+		admin.Use(middleware.AuthMiddleware(), middleware.AdminMiddleware()) // Ensure only admins can access
+		{
+			admin.GET("/dashboard", s.GetAdminDashboard) // Admin dashboard route
+			admin.GET("/users", s.AdminGetUsers)         // Admin route to get all users
+			admin.GET("/user/:id", s.AdminGetUser)       // Admin route to get a single user by ID
+			admin.DELETE("/user/:id", s.AdminDeleteUser) // Admin route to delete a user
+			admin.PUT("/user", s.AdminUpdateUser)        // Admin route to update a user
 
+			admin.GET("/blogs", s.AdminGetBlogs)         // Admin route to get all blogs
+			admin.GET("/blog/:id", s.AdminGetBlog)       // Admin route to get a single blog by ID
+			admin.DELETE("/blog/:id", s.AdminDeleteBlog) // Admin route to delete a blog
+			admin.PUT("/blog", s.AdminUpdateBlog)        // Admin route to update a blog
+
+			admin.GET("/comments", s.AdminGetComments)         // Admin route to get all comments
+			admin.DELETE("/comment/:id", s.AdminDeleteComment) // Admin route to delete a comment
+			admin.PUT("/comment", s.AdminUpdateComment)        // Admin route to update a comment
+		}
 	}
 	return r
 }

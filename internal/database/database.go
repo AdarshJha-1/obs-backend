@@ -27,7 +27,8 @@ type Service interface {
 	GetUsers() ([]models.User, error)
 	DeleteUser(id uint) error
 	UpdateUser(user *models.User) error
-
+	FollowUser(followerID, followedID uint) error
+	UnfollowUser(followerID, followedID uint) error
 	// Blog Methods
 	GetBlogs() ([]models.Blog, error)
 	GetBlog(id uint) (*models.Blog, error)
@@ -50,6 +51,25 @@ type Service interface {
 	LikeBlog(like *models.Like) error
 	UnlikeBlog(userID, blogID uint) error
 	DeleteLike(likeID uint) error
+
+	// Admin functions
+	// User-related methods
+	AdminGetUsers() ([]models.User, error)
+	AdminGetUser(id uint) (*models.User, error)
+	AdminDeleteUser(id uint) error
+	AdminUpdateUser(user *models.User) error
+
+	// Blog-related methods
+	AdminGetBlogs() ([]models.Blog, error)
+	AdminGetBlog(id uint) (*models.Blog, error)
+	AdminDeleteBlog(id uint) error
+	AdminUpdateBlog(blog *models.Blog) error
+
+	// Comment-related methods
+	AdminDeleteComment(id uint) error
+	AdminUpdateComment(id uint, content string) error
+	AdminGetComments() ([]models.Comment, error)
+	GetAdminDashboardData() (DashboardData, error)
 }
 
 var (
