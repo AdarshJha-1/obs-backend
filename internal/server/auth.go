@@ -96,7 +96,7 @@ func (s *Server) LoginUser(c *gin.Context) {
 		HttpOnly: true,
 		Secure:   true,
 		Path:     "/",
-		MaxAge:   3600, // Cookie lasts for 1 hour (3600 seconds)
+		MaxAge:   60 * 60 * 24 * 7,
 		SameSite: http.SameSiteLaxMode,
 	})
 

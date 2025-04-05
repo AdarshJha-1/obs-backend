@@ -130,6 +130,61 @@ func (s *Server) DeleteCurrentUser(c *gin.Context) {
 	c.JSON(http.StatusOK, res)
 }
 
+// ToggleFollow toggles follow/unfollow for a user
+func (s *Server) ToggleFollow(c *gin.Context) {
+	userID, exists := c.Get("user_id")
+	if !exists {
+		c.JSON(http.StatusUnauthorized, types.Response{StatusCode: http.StatusUnauthorized, Success: false, Message: "Unauthorized access"})
+		return
+	}
+
+	targetID, err := utils.ParseUintParam(c, "target_id")
+	if err != nil {
+		c.JSON(http.StatusBadRequest, types.Response{StatusCode: http.StatusBadRequest, Success: false, Message: "Invalid user ID", Error: err.Error()})
+		return
+	}
+
+	if userID.(uint) == targetID {
+		c.JSON(http.StatusBadRequest, types.Response{StatusCode: http.StatusBadRequest, Success: false, Message: "You cannot follow yourself"})
+		return
+	}
+
+	// Ensure target user exists
+	targetUser, err := s.db.GetUser(targetID)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, types.Response{StatusCode: http.StatusInternalServerError, Success: false, Message: "Error checking user", Error: err.Error()})
+		return
+	}
+	if targetUser == nil {
+		c.JSON(http.StatusNotFound, types.Response{StatusCode: http.StatusNotFound, Success: false, Message: "User not found"})
+		return
+	}
+
+	// Check if already following
+	isFollowing, err := s.db.IsFollowing(userID.(uint), targetID)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, types.Response{StatusCode: http.StatusInternalServerError, Success: false, Message: "Failed to check follow status", Error: err.Error()})
+		return
+	}
+
+	if isFollowing {
+		err = s.db.UnfollowUser(userID.(uint), targetID)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, types.Response{StatusCode: http.StatusInternalServerError, Success: false, Message: "Error unfollowing user", Error: err.Error()})
+			return
+		}
+		c.JSON(http.StatusOK, types.Response{StatusCode: http.StatusOK, Success: true, Message: "Unfollowed user"})
+	} else {
+		err = s.db.FollowUser(userID.(uint), targetID)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, types.Response{StatusCode: http.StatusInternalServerError, Success: false, Message: "Error following user", Error: err.Error()})
+			return
+		}
+		c.JSON(http.StatusOK, types.Response{StatusCode: http.StatusOK, Success: true, Message: "Followed user"})
+	}
+}
+
+/*
 // Follow a user
 func (s *Server) FollowUser(c *gin.Context) {
 	userID, exists := c.Get("user_id")
@@ -138,12 +193,21 @@ func (s *Server) FollowUser(c *gin.Context) {
 		return
 	}
 
-	followedID, err := utils.ParseUintParam(c, "user_id")
+	followedID, err := utils.ParseUintParam(c, "target_id")
 	if err != nil {
 		c.JSON(http.StatusBadRequest, types.Response{StatusCode: http.StatusBadRequest, Success: false, Message: "Invalid user ID", Error: err.Error()})
 		return
 	}
 
+	targetUser, err := s.db.GetUser(followedID)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, types.Response{StatusCode: http.StatusInternalServerError, Success: false, Message: "Error checking user", Error: err.Error()})
+		return
+	}
+	if targetUser == nil {
+		c.JSON(http.StatusNotFound, types.Response{StatusCode: http.StatusNotFound, Success: false, Message: "User not found"})
+		return
+	}
 	err = s.db.FollowUser(userID.(uint), followedID)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, types.Response{StatusCode: http.StatusInternalServerError, Success: false, Message: "Error following user", Error: err.Error()})
@@ -175,3 +239,4 @@ func (s *Server) UnfollowUser(c *gin.Context) {
 
 	c.JSON(http.StatusOK, types.Response{StatusCode: http.StatusOK, Success: true, Message: "Unfollowed user successfully"})
 }
+*/

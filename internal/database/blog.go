@@ -50,7 +50,7 @@ func (s *service) DeleteBlog(id uint) error {
 
 // UpdateBlog modifies an existing blog's fields safely
 func (s *service) UpdateBlog(blog *models.Blog) error {
-	result := s.DB.Model(&models.Blog{}).Where("id = ?", blog.ID).Updates(map[string]interface{}{
+	result := s.DB.Model(&models.Blog{}).Where("id = ?", blog.ID).Updates(map[string]any{
 		"title":   blog.Title,
 		"content": blog.Content,
 	})

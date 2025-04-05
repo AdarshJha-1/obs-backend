@@ -41,7 +41,7 @@ func (s *service) AdminDeleteUser(id uint) error {
 
 // AdminUpdateUser updates an existing user's information
 func (s *service) AdminUpdateUser(user *models.User) error {
-	result := s.DB.Model(&models.User{}).Where("id = ?", user.ID).Updates(map[string]interface{}{
+	result := s.DB.Model(&models.User{}).Where("id = ?", user.ID).Updates(map[string]any{
 		"username": user.Username,
 		"email":    user.Email,
 	})
@@ -57,7 +57,7 @@ func (s *service) AdminUpdateUser(user *models.User) error {
 // AdminGetBlogs retrieves all blogs along with their related data
 func (s *service) AdminGetBlogs() ([]models.Blog, error) {
 	var blogs []models.Blog
-	if err := s.DB.Preload("Author").Find(&blogs).Error; err != nil {
+	if err := s.DB.Preload("User").Preload("Comments").Preload("Likes").Preload("Views").Find(&blogs).Error; err != nil {
 		return nil, err
 	}
 	return blogs, nil
@@ -66,7 +66,7 @@ func (s *service) AdminGetBlogs() ([]models.Blog, error) {
 // AdminGetBlog retrieves a single blog by its ID along with related data
 func (s *service) AdminGetBlog(id uint) (*models.Blog, error) {
 	var blog models.Blog
-	if err := s.DB.Preload("Author").First(&blog, id).Error; err != nil {
+	if err := s.DB.Preload("User").Preload("Comments").Preload("Likes").Preload("Views").First(&blog).Error; err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return nil, nil
 		}
@@ -89,7 +89,7 @@ func (s *service) AdminDeleteBlog(id uint) error {
 
 // AdminUpdateBlog updates a blog's information
 func (s *service) AdminUpdateBlog(blog *models.Blog) error {
-	result := s.DB.Model(&models.Blog{}).Where("id = ?", blog.ID).Updates(map[string]interface{}{
+	result := s.DB.Model(&models.Blog{}).Where("id = ?", blog.ID).Updates(map[string]any{
 		"title":   blog.Title,
 		"content": blog.Content,
 	})

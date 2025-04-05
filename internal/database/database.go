@@ -29,6 +29,7 @@ type Service interface {
 	UpdateUser(user *models.User) error
 	FollowUser(followerID, followedID uint) error
 	UnfollowUser(followerID, followedID uint) error
+	IsFollowing(followerID, followedID uint) (bool, error)
 	// Blog Methods
 	GetBlogs() ([]models.Blog, error)
 	GetBlog(id uint) (*models.Blog, error)

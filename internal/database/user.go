@@ -161,3 +161,17 @@ func (s *service) UnfollowUser(followerID, followedID uint) error {
 	log.Printf("[DATABASE] User %d unfollowed user %d", followerID, followedID)
 	return nil
 }
+
+// IsFollowing checks if a user is already following another user
+func (s *service) IsFollowing(followerID, followedID uint) (bool, error) {
+	var follow models.Follow
+	err := s.DB.Where("follower_id = ? AND followed_id = ?", followerID, followedID).First(&follow).Error
+
+	if errors.Is(err, gorm.ErrRecordNotFound) {
+		return false, nil
+	}
+	if err != nil {
+		return false, err
+	}
+	return true, nil
+}

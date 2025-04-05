@@ -41,8 +41,7 @@ func (s *Server) RegisterRoutes() http.Handler {
 			protectedUser.GET("/:user_id", s.GetUserById)
 			protectedUser.DELETE("/", s.DeleteCurrentUser)
 			protectedUser.PUT("/", s.UpdateCurrentUser)
-			protectedUser.POST("/follow/:user_id", s.FollowUser)
-			protectedUser.DELETE("/unfollow/:user_id", s.UnfollowUser)
+			protectedUser.POST("/follow/:target_id", s.ToggleFollow)
 			protectedUser.POST("/logout", s.LogoutUser)
 		}
 
