@@ -88,6 +88,8 @@ type service struct {
 
 // New initializes the database connection
 func New() Service {
+
+	fmt.Println(database, password, username)
 	dsn := fmt.Sprintf(
 		"host=%s user=%s password=%s dbname=%s port=%s sslmode=disable search_path=%s",
 		host, username, password, database, port, schema,
