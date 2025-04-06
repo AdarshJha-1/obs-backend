@@ -94,7 +94,7 @@ func (s *Server) LoginUser(c *gin.Context) {
 		Name:     "auth_token",
 		Value:    token,
 		HttpOnly: true,
-		Secure:   true,
+		Secure:   false,
 		Path:     "/",
 		MaxAge:   60 * 60 * 24 * 7,
 		SameSite: http.SameSiteLaxMode,
@@ -118,7 +118,7 @@ func (s *Server) LogoutUser(c *gin.Context) {
 		Name:     "auth_token",
 		Value:    "",
 		HttpOnly: true,
-		Secure:   true,
+		Secure:   false,
 		Path:     "/",
 		MaxAge:   -1, // Expire the cookie immediately
 		SameSite: http.SameSiteLaxMode,
